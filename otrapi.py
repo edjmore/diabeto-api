@@ -1,7 +1,8 @@
+import otrparser
+import json,time
 import requests
-import time
 
-class OtrApi:
+class OtrApi(object):
     def __init__(self, username, password):
         self.username = username
         self.password = password
@@ -64,12 +65,23 @@ class OtrApi:
         response = self.session.post(OtrApi.__url(), data=data)
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
-        return response
+        return json.loads(response.text)['response']['report']
+
+    def get_profile(self):
+        response = self.session.get(OtrApi.__url('settings/profile/'))
+        if response.status_code != requests.codes.ok:
+            response.raise_for_status()
+        return response.text
 
     @staticmethod
-    def __url():
-        return 'https://onetouchreveal.com/a/'
+    def __url(dest='a/'):
+        return format('https://onetouchreveal.com/%s' % dest)
 
 if __name__ == '__main__':
     with OtrApi('ejmoore2', 'onetouch2013') as otr:
-        print otr.get_data_list_report('20170129', '20170428').text
+        raw_html = otr.get_data_list_report('20170129', '20170428')
+        parse = otrparser.OtrParser(raw_html)
+        logbook_entries = parse.get_logbook_entries()
+        print('\n'.join(map(str, logbook_entries)))
+        #raw_html = otr.get_profile()
+        #print raw_html
