@@ -1,0 +1,13 @@
+Host: onetouchreveal.com
+Connection: keep-alive
+Content-Length: 236
+Origin: https://onetouchreveal.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+Accept: application/json, text/javascript, */*; q=0.01
+X-Requested-With: XMLHttpRequest
+From: 48274d55922681bc48c1d70171fff3a2
+DNT: 1
+Referer: https://onetouchreveal.com/login/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.8
