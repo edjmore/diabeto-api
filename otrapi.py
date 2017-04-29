@@ -78,7 +78,7 @@ class OtrApi(object):
         return format('https://onetouchreveal.com/%s' % dest)
 
 if __name__ == '__main__':
-    with OtrApi('ejmoore2', 'onetouch2013') as otr:
+    with OtrApi(raw_input('username:\t').strip(), raw_input('password:\t').strip()) as otr:
         raw_html = otr.get_data_list_report('20170129', '20170428')
         parse = otrparser.OtrParser(raw_html)
         logbook_entries = parse.get_logbook_entries()
