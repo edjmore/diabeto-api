@@ -1,1 +1,6 @@
+# python bytecode
 *.pyc
+
+# temp debugging files
+/tmp/*
+
