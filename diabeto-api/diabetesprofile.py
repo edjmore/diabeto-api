@@ -13,6 +13,18 @@ class OtrDiabetesProfile(DiabetesProfile):
         self.bg_after_meal_range = bg_after_meal_range
         self.otr_timeslots_sched = otr_timeslots_sched
 
+    def __str__(self):
+        rng_str = lambda name_rng: format('%s: %s mg/dL' % name_rng)
+        return format('Diabetes type: %s\n--\n%s\n--\n%s' % (self.diabetes_type,
+            '\n'.join(map(rng_str, [
+                ('Bg target range',self.bg_tgt_range),
+                ('Bg severe range',self.bg_severe_range),
+                ('Bg before meal',self.bg_before_meal_range),
+                ('Bg after meal',self.bg_after_meal_range)
+                ])),
+            self.otr_timeslots_sched
+            ))
+
 class OtrTimeslotsSched(object):
     '''represents the otr labeling system mapping time ranges throughout the day to labels, e.g. "7pm - 10pm -> After Dinner"
     '''

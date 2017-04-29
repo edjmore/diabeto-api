@@ -14,3 +14,6 @@ class Range(object):
         @v: the value to test
         '''
         return self.lo <= v and v <= self.hi
+
+    def __str__(self):
+        return format('%s - %s' % (self.lo,self.hi))

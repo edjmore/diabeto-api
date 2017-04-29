@@ -9,13 +9,15 @@ except NameError:
     global raw_input
     raw_input = input
 
+print __file__
+
 class OtrApi(object):
     def __init__(self, username, password):
         self.username = username
         self.password = password
         self.session = requests.Session()
-        self.session.headers = OtrApi.__raw_headers_to_dict('headers.txt')
-        self.session.cookies = requests.cookies.cookiejar_from_dict(OtrApi.__raw_cookies_to_dict('cookies.txt'))
+        self.session.headers = OtrApi.__raw_headers_to_dict('res/headers.txt')
+        self.session.cookies = requests.cookies.cookiejar_from_dict(OtrApi.__raw_cookies_to_dict('res/cookies.txt'))
 
     @staticmethod
     def __raw_headers_to_dict(filename):
@@ -107,7 +109,8 @@ if __name__ == '__main__':
         #parse = otrparser.OtrParser(raw_html)
         #logbook_entries = parse.get_logbook_entries()
         #raw_html = otr.get_profile()
-    with open('get_profile.html', 'r') as f:
+    with open('tmp/get_profile.html', 'r') as f:
         raw_html = ''.join(f.readlines())
     parse = otrparser.OtrParser(raw_html)
-    parse.get_diabetes_profile()
+    profile = parse.get_diabetes_profile()
+    print('\n' + str(profile))

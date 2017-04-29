@@ -27,15 +27,38 @@ class OtrParser(object):
         return logbook_entries
 
     def get_diabetes_profile(self):
-        #todo: parse bg ranges
+        '''parses the user\'s diabetes profile
+        '''
+        diabetes_type = self.__get_diabetes_type()
+        bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range = \
+            self.__get_bg_ranges()
         timeslots_sched = self.__get_timeslots_sched()
         return diabetesprofile.OtrDiabetesProfile(
-            1, 2, 3, 4, timeslots_sched
+            diabetes_type,
+            bg_tgt_range, bg_severe_range,
+            bg_before_meal_range, bg_after_meal_range,
+            timeslots_sched
             )
 
+    def __get_diabetes_type(self):
+        # returns text indicating the user's diabetes type; e.g. Type 1, Type 2, or Gestational
+        div = self.soup.find(id='targetsDisplay')
+        p = div.find('p')
+        return p.find('strong').get_text().strip()
+
+    def __get_bg_ranges(self):
+        # finds the four target bg ranges in user profile
+        range_tbl = self.soup.find('table', 'targetRanges')
+        tgt_rngs = lambda tr: util.Range(float(tr.find('td', 'target-range-low').get_text().strip()),float(tr.find('td', 'target-range-high').get_text().strip()))
+        bg_before_meal_range,bg_after_meal_range,bg_tgt_range = \
+            map(tgt_rngs, range_tbl.find_all('tr')[:3])
+        sev_low = float(range_tbl.find('td', 'severe-low').get_text().strip())
+        sev_high = float(range_tbl.find('td', 'severe-high').get_text().strip())
+        bg_severe_range = util.Range(sev_low, sev_high)
+        return bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range
+
     def __get_timeslots_sched(self):
-        '''parses an otr timeslots sched from html
-        '''
+        # parses an otr timeslots sched from html
         sched_tbl = self.soup.find(id='schedulePrefsDisplay')
         names_row,times_row = sched_tbl.find_all('tr')[:2]
         names = map(lambda td: td.get_text().strip(), names_row.find_all('td'))

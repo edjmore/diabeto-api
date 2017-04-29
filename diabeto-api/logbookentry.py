@@ -16,7 +16,7 @@ class OtrGlucoseEntry(OtrLogbookEntry):
         self.bg_value = bg_value
 
     def __str__(self):
-        return format('%s, %s, %d, %s' % (
+        return format('%s, %s, %d mg/dL, %s' % (
             self.entry_date.strftime('%m/%d/%Y'),
             self.entry_time.strftime('%I:%M %p'),
             self.bg_value,
