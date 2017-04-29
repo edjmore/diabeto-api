@@ -7,6 +7,8 @@ class OtrParser(object):
         self.soup = bs4.BeautifulSoup(raw_html, 'html.parser')
 
     def get_logbook_entries(self):
+        '''returns a list of logbook entries parsed from the html
+        '''
         logbook_entries = []
         for tbl_row in self.soup.find_all('tr')[1:]:
             cells = tbl_row.find_all('div')
@@ -23,3 +25,25 @@ class OtrParser(object):
             else:
                 print('*** OtrParser: unknown entry type "%s" ***' % entry_type)
         return logbook_entries
+
+    def get_diabetes_profile(self):
+        #todo: parse bg ranges
+        timeslots_sched = self.__get_timeslots_sched()
+        return diabetesprofile.OtrDiabetesProfile(
+            1, 2, 3, 4, timeslots_sched
+            )
+
+    def __get_timeslots_sched(self):
+        '''parses an otr timeslots sched from html
+        '''
+        sched_tbl = self.soup.find(id='schedulePrefsDisplay')
+        names_row,times_row = sched_tbl.find_all('tr')[:2]
+        names = map(lambda td: td.get_text().strip(), names_row.find_all('td'))
+        times = map(lambda td: td.get_text(), times_row.find_all('td'))
+        t = lambda s: dt.datetime.strptime(s, '%I:%M %p').time()
+        raw_sched = []
+        for name,time in zip(names, times):
+            start,end = map(lambda tok: tok.strip(), time.split('-'))
+            time_range = util.Range(t(start), t(end))
+            raw_sched.append((name,time_range))
+        return diabetesprofile.OtrTimeslotsSched(raw_sched)
