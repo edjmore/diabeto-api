@@ -1,15 +1,5 @@
-import otrparser
 import json,time
 import requests
-
-# fix raw_input in python 3.x
-try:
-    temp = raw_input
-except NameError:
-    global raw_input
-    raw_input = input
-
-print __file__
 
 class OtrApi(object):
     def __init__(self, username, password):
@@ -17,7 +7,9 @@ class OtrApi(object):
         self.password = password
         self.session = requests.Session()
         self.session.headers = OtrApi.__raw_headers_to_dict('res/headers.txt')
-        self.session.cookies = requests.cookies.cookiejar_from_dict(OtrApi.__raw_cookies_to_dict('res/cookies.txt'))
+        self.session.cookies = requests.cookies.cookiejar_from_dict(
+            OtrApi.__raw_cookies_to_dict('res/cookies.txt')
+            )
 
     @staticmethod
     def __raw_headers_to_dict(filename):
@@ -101,16 +93,3 @@ class OtrApi(object):
     @staticmethod
     def __url(dest='a/'):
         return format('https://onetouchreveal.com/%s' % dest)
-
-if __name__ == '__main__':
-    raw_html = None
-    #with OtrApi(raw_input('username:\t').strip(), raw_input('password:\t').strip()) as otr:
-        #raw_html = otr.get_data_list_report('20170129', '20170428')
-        #parse = otrparser.OtrParser(raw_html)
-        #logbook_entries = parse.get_logbook_entries()
-        #raw_html = otr.get_profile()
-    with open('tmp/get_profile.html', 'r') as f:
-        raw_html = ''.join(f.readlines())
-    parse = otrparser.OtrParser(raw_html)
-    profile = parse.get_diabetes_profile()
-    print('\n' + str(profile))

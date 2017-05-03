@@ -20,7 +20,7 @@ class OtrGlucoseEntry(OtrLogbookEntry):
             self.entry_date.strftime('%m/%d/%Y'),
             self.entry_time.strftime('%I:%M %p'),
             self.bg_value,
-            self.otr_comments if self.otr_comments else '<none>'
+            self.otr_comments
             ))
 
 class OtrPatternEntry(OtrLogbookEntry):
@@ -31,5 +31,5 @@ class OtrPatternEntry(OtrLogbookEntry):
     def __str__(self):
         return format('%s, %s' % (
             self.entry_date.strftime('%m/%d/%Y'),
-            self.otr_comments if self.otr_comments else '<none>'
+            self.otr_comments
             ))
