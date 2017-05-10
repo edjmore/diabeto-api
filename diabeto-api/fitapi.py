@@ -8,8 +8,8 @@ class FitApi(object):
         self.redirect_url = redirect_url
 
     def get_auth_page_url(self):
-        # returns the URL for the Fitbit authorization page where users can login
-        #
+        ''' Returns the URL for the Fitbit authorization page where users can login
+        '''
         data = {
 			'response_type': 'code',
 			'client_id'    : self.client_id,
@@ -24,11 +24,11 @@ class FitApi(object):
         return format('%s?%s' % (FitApi.__auth_url(),data))
 
     def login(self, auth_code):
-        # logs in the user and returns a FitUser object
-        # @auth_code    an authorization code from Fitbit to request an access token; this will have
-        #               been provided to our app through a request from the Fitbit servers to our
-        #               redirect URL
-        #
+        ''' Logs in the user and returns a FitUser object
+        @auth_code      an authorization code from Fitbit to request an access token; this will have
+                        been provided to our app through a request from the Fitbit servers to our
+                        redirect URL
+        '''
         headers = self.__basic_headers()
         data = {
 			'client_id'   : self.client_id,
@@ -47,9 +47,9 @@ class FitApi(object):
             )
 
     def refresh_login(self, fit_user):
-        # uses the refresh_token to keep the user logged in
-        # @fit_user     a FitUser object with a valid refresh token
-        #
+        ''' Uses the refresh_token to keep the user logged in
+        @fit_user   a FitUser object with a valid refresh token
+        '''
         headers = self.__bearer_headers(fit_user)
         data = {
             'grant_type'   : 'refresh_token',

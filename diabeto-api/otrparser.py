@@ -7,8 +7,8 @@ class OtrParser(object):
         self.soup = bs4.BeautifulSoup(raw_html, 'html.parser')
 
     def get_logbook_entries(self):
-        # returns a list of logbook entries parsed from the html
-        #
+        ''' Returns a list of logbook entries parsed from the html
+        '''
         logbook_entries = []
         for tbl_row in self.soup.find_all('tr')[1:]:
             cells = tbl_row.find_all('div')
@@ -27,8 +27,8 @@ class OtrParser(object):
         return logbook_entries
 
     def get_diabetes_profile(self):
-        # parses the user\'s diabetes profile
-        #
+        ''' Parses the user's diabetes profile
+        '''
         diabetes_type = self.__get_diabetes_type()
         bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range = \
             self.__get_bg_ranges()
@@ -41,14 +41,14 @@ class OtrParser(object):
             )
 
     def __get_diabetes_type(self):
-        # returns text indicating the user's diabetes type; e.g. Type 1, Type 2, or Gestational
+        # Returns text indicating the user's diabetes type; e.g. Type 1, Type 2, or Gestational
         #
         div = self.soup.find(id='targetsDisplay')
         p = div.find('p')
         return p.find('strong').get_text().strip()
 
     def __get_bg_ranges(self):
-        # finds the four target bg ranges in user profile
+        # Finds the four target bg ranges in user profile
         #
         range_tbl = self.soup.find('table', 'targetRanges')
         tgt_rngs = lambda tr: util.Range(float(tr.find('td', 'target-range-low').get_text().strip()),float(tr.find('td', 'target-range-high').get_text().strip()))
@@ -60,7 +60,7 @@ class OtrParser(object):
         return bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range
 
     def __get_timeslots_sched(self):
-        # parses an otr timeslots sched from html
+        # Parses an otr timeslots sched from html
         #
         sched_tbl = self.soup.find(id='schedulePrefsDisplay')
         names_row,times_row = sched_tbl.find_all('tr')[:2]

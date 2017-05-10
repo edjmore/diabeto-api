@@ -26,22 +26,22 @@ class OtrDiabetesProfile(DiabetesProfile):
             ))
 
 class OtrTimeslotsSched(object):
-    # represents the otr labeling system mapping time ranges throughout the day to labels, e.g. "7pm - 10pm -> After Dinner"
-    #
+    ''' Represents the otr labeling system mapping time ranges throughout the day to labels, e.g. "7pm - 10pm -> After Dinner"
+    '''
     def __init__(self, raw_sched):
-        # initializes an OtrTimeslotsSched
-        # @raw_sched: a list of tuples of the form (name, time range)
-        #
+        ''' Initializes an OtrTimeslotsSched
+        @raw_sched  a list of tuples of the form (name, time range)
+        '''
         self.__sorted_sched = sorted(raw_sched, key=lambda tup: tup[1].lo)
 
     def get_otr_timeslot(self, otr_logbook_entry):
-        # returns the name for the otr timeslot within which this entry falls
-        # @otr_logbook_entry: an otr logbook entry
-        #
+        ''' Returns the name for the otr timeslot within which this entry falls
+        @otr_logbook_entry  an otr logbook entry
+        '''
         return __get_otr_timeslot(otr_logbook_entry.entry_time, 0, len(self.__sorted_sched)-1)
 
     def __get_otr_timeslot(self, entry_time, lo_idx, hi_idx):
-        # finds timeslot name via binary search on sorted sched
+        # Finds timeslot name via binary search on sorted sched
         #
         if lo_idx > hi_idx:
             return None
