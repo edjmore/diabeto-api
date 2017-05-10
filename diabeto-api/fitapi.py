@@ -7,6 +7,28 @@ class FitApi(object):
         self.client_secret = client_secret
         self.redirect_url = redirect_url
 
+    def get_activity_time_series(self, fit_user, activity_metric, start_date, end_date='1d', start_time=None, end_time=None, high_detail=False):
+        ''' Returns a series of logbook entries for activity data within the specified time range on the given date
+        @fit_user           an authenticated Fitbit user
+        @activity_metric    one of 'calories', 'steps', 'distance', 'floors', or 'elevation'
+        @start_date         start date in yyyy-MM-dd format (or 'today')
+        @end_date           analogous to @start_date
+        @start_time         start time in HH:mm format
+        @end_time           analogous to @start_time
+        @high_detail        if True, will get an activity entry for each minute in the time
+                            range, otw every 15 minutes (defaults to False)
+        '''
+        detail_level = '1min' if high_detail else '15min'
+        url = format('https://api.fitbit.com/1/user/-/activities/%s/date/%s/%s/%s'
+            % (activity_metric,start_date,end_date,detail_level)
+            )
+        if start_time is not None and end_time is not None:
+            url += format('/time/%s/%s' % (start_time,end_time))
+        url += '.json'
+        headers = self.__bearer_headers(fit_user)
+        response = requests.get(url, headers=headers)
+        return response.text
+
     def get_auth_page_url(self):
         ''' Returns the URL for the Fitbit authorization page where users can login
         '''

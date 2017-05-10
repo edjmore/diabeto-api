@@ -33,3 +33,17 @@ class OtrPatternEntry(OtrLogbookEntry):
             self.entry_date.strftime('%m/%d/%Y'),
             self.otr_comments
             ))
+
+class FitLogbookEntry(LogbookEntry):
+    def __init__(self, entry_date, entry_time, activity_metric, value):
+        super(FitLogbookEntry, self).__init__(entry_date, entry_time)
+        self.activity_metric = activity_metric
+        self.value = value
+
+    def __str__(self):
+        return format('%s, %s, %s, %s' % (
+            self.entry_date,
+            self.entry_time,
+            self.activity_metric,
+            self.value
+            ))

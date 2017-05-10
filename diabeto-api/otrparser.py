@@ -4,13 +4,13 @@ import bs4
 
 class OtrParser(object):
     def __init__(self, raw_html):
-        self.soup = bs4.BeautifulSoup(raw_html, 'html.parser')
+        self.__soup = bs4.BeautifulSoup(raw_html, 'html.parser')
 
     def get_logbook_entries(self):
         ''' Returns a list of logbook entries parsed from the html
         '''
         logbook_entries = []
-        for tbl_row in self.soup.find_all('tr')[1:]:
+        for tbl_row in self.__soup.find_all('tr')[1:]:
             cells = tbl_row.find_all('div')
             entry_date = dt.datetime.strptime(cells[0].get_text(), '%m/%d/%Y').date()
             entry_time = dt.datetime.strptime(cells[1].get_text(), '%I:%M %p').time()
@@ -43,14 +43,14 @@ class OtrParser(object):
     def __get_diabetes_type(self):
         # Returns text indicating the user's diabetes type; e.g. Type 1, Type 2, or Gestational
         #
-        div = self.soup.find(id='targetsDisplay')
+        div = self.__soup.find(id='targetsDisplay')
         p = div.find('p')
         return p.find('strong').get_text().strip()
 
     def __get_bg_ranges(self):
         # Finds the four target bg ranges in user profile
         #
-        range_tbl = self.soup.find('table', 'targetRanges')
+        range_tbl = self.__soup.find('table', 'targetRanges')
         tgt_rngs = lambda tr: util.Range(float(tr.find('td', 'target-range-low').get_text().strip()),float(tr.find('td', 'target-range-high').get_text().strip()))
         bg_before_meal_range,bg_after_meal_range,bg_tgt_range = \
             map(tgt_rngs, range_tbl.find_all('tr')[:3])
@@ -62,7 +62,7 @@ class OtrParser(object):
     def __get_timeslots_sched(self):
         # Parses an otr timeslots sched from html
         #
-        sched_tbl = self.soup.find(id='schedulePrefsDisplay')
+        sched_tbl = self.__soup.find(id='schedulePrefsDisplay')
         names_row,times_row = sched_tbl.find_all('tr')[:2]
         names = map(lambda td: td.get_text().strip(), names_row.find_all('td'))
         times = map(lambda td: td.get_text(), times_row.find_all('td'))
