@@ -5,6 +5,12 @@ class LogbookEntry(object):
         self.entry_date = entry_date
         self.entry_time = entry_time
 
+    def __str__(self):
+        return format('%s,%s' % (
+            self.entry_date.strftime('%m/%d/%Y'),
+            self.entry_time.strftime('%I:%M %p'),
+            ))
+
 class OtrLogbookEntry(LogbookEntry):
     def __init__(self, entry_date, entry_time, otr_comments):
         super(OtrLogbookEntry, self).__init__(entry_date, entry_time)
@@ -41,9 +47,8 @@ class FitLogbookEntry(LogbookEntry):
         self.value = value
 
     def __str__(self):
-        return format('%s, %s, %s, %s' % (
-            self.entry_date,
-            self.entry_time,
+        return format('%s,%s,%s' % (
+            super(FitLogbookEntry, self).__str__(),
             self.activity_metric,
             self.value
             ))
