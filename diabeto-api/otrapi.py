@@ -14,6 +14,7 @@ class OtrApi(object):
     @staticmethod
     def __raw_headers_to_dict(filename):
         # read in session headers from file
+        #
         headers = {}
         with open(filename, 'r') as f:
             for l in f.readlines():
@@ -26,6 +27,7 @@ class OtrApi(object):
     @staticmethod
     def __raw_cookies_to_dict(filename):
         # read in initial session cookies from file
+        #
         cookies = {}
         with open(filename, 'r') as f:
             for l in f.readline().strip().split('; '):
@@ -41,11 +43,10 @@ class OtrApi(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logout()
-        return self
 
     def login(self):
-        '''logs in to the otr site, raises error on failure
-        '''
+        # logs in to the otr site, raises error on failure
+        #
         print('login POST')
         ajax_request = format(
             '[{"moduleName":"Account","methodCall":"login","params":[{"username":"%s","password":"%s","clientTime":"%s"}]}]'
@@ -57,8 +58,8 @@ class OtrApi(object):
             response.raise_for_status()
 
     def logout(self):
-        '''logs out of the otr site, raises error on failure
-        '''
+        # logs out of the otr site, raises error on failure
+        #
         print('logout POST')
         data = {'ajaxRequest': '[{"moduleName":"Account","methodCall":"logout"}]'}
         response = self.session.post(OtrApi.__url(), data=data)
@@ -66,10 +67,10 @@ class OtrApi(object):
             response.raise_for_status()
 
     def get_data_list_report(self, start_date, end_date):
-        '''returns a raw html report of logbook entries for the given period
-        @start_date: start of period, date string formatted as "%Y%m%d"
-        @end_date:   end of period, ^same format as @start_date
-        '''
+        # returns a raw html report of logbook entries for the given period
+        # @start_date: start of period, date string formatted as "%Y%m%d"
+        # @end_date:   end of period, ^same format as @start_date
+        #
         print('get_data_list_report POST')
         ajax_request = format(
             '[{"moduleName":"Report","methodCall":"getSingleHTMLReport","params":[{"reportId":"DATA_LIST","numberDays":"0","startDt":"%s","endDt":"%s","options":{},"sortAscending":true,"patientClinicId":""}]}]'
@@ -82,8 +83,8 @@ class OtrApi(object):
         return json.loads(response.text)['response']['report']
 
     def get_profile(self):
-        '''returns the raw html from user's profile page
-        '''
+        # returns the raw html from user's profile page
+        #
         print('get_profile GET')
         response = self.session.get(OtrApi.__url('settings/profile/'))
         if response.status_code != requests.codes.ok:
