@@ -1,8 +1,8 @@
 import otrapi,otrparser
 import multiprocessing
-from flask import Flask
+import Flask
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
 
 @app.route('/logbook/<start_date>/<end_date>')
 def logbook(start_date, end_date):
