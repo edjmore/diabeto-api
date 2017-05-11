@@ -10,7 +10,7 @@ class FitApi(object):
     def get_activity_time_series(self, fit_user, activity_metric, start_date, end_date='1d', start_time=None, end_time=None, high_detail=False):
         ''' Returns a series of logbook entries for activity data within the specified time range on the given date
         @fit_user           an authenticated Fitbit user
-        @activity_metric    one of 'calories', 'steps', 'distance', 'floors', or 'elevation'
+        @activity_metric    one of 'calories', 'steps', or 'distance'
         @start_date         start date in yyyy-MM-dd format (or 'today')
         @end_date           analogous to @start_date
         @start_time         start time in HH:mm format

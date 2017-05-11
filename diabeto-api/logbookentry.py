@@ -11,6 +11,8 @@ class LogbookEntry(object):
             self.entry_time.strftime('%I:%M %p'),
             ))
 
+# OTR specific logbook entries
+
 class OtrLogbookEntry(LogbookEntry):
     def __init__(self, entry_date, entry_time, otr_comments):
         super(OtrLogbookEntry, self).__init__(entry_date, entry_time)
@@ -21,34 +23,37 @@ class OtrGlucoseEntry(OtrLogbookEntry):
         super(OtrGlucoseEntry, self).__init__(entry_date, entry_time, otr_comments)
         self.bg_value = bg_value
 
-    def __str__(self):
-        return format('%s, %s, %d mg/dL, %s' % (
-            self.entry_date.strftime('%m/%d/%Y'),
-            self.entry_time.strftime('%I:%M %p'),
-            self.bg_value,
-            self.otr_comments
-            ))
-
 class OtrPatternEntry(OtrLogbookEntry):
     def __init__(self, entry_date, entry_time, otr_comments):
         super(OtrPatternEntry, self).__init__(entry_date, entry_time, otr_comments)
         self.pattern = otr_comments
 
-    def __str__(self):
-        return format('%s, %s' % (
-            self.entry_date.strftime('%m/%d/%Y'),
-            self.otr_comments
-            ))
+# Fitbit logbook entries
 
-class FitLogbookEntry(LogbookEntry):
-    def __init__(self, entry_date, entry_time, activity_metric, value):
-        super(FitLogbookEntry, self).__init__(entry_date, entry_time)
-        self.activity_metric = activity_metric
-        self.value = value
+class FitCaloriesEntry(LogbookEntry):
+    def __init__(self, entry_date, entry_time, calories):
+        super(FitCaloriesEntry, self).__init__(entry_date, entry_time)
+        self.calories = calories
 
-    def __str__(self):
-        return format('%s,%s,%s' % (
-            super(FitLogbookEntry, self).__str__(),
-            self.activity_metric,
-            self.value
-            ))
+class FitStepsEntry(LogbookEntry):
+    def __init__(self, entry_date, entry_time, steps):
+        super(FitStepsEntry, self).__init__(entry_date, entry_time)
+        self.steps = steps
+
+class FitDistanceEntry(LogbookEntry):
+    def __init__(self, entry_date, entry_time, distance):
+        super(FitDistanceEntry, self).__init__(entry_date, entry_time)
+        self.distance = distance
+
+def get_fit_logentry_constructor(activity_metric):
+    ''' Returns the appropriate Fitbit LogbookEntry constructor for the given activity metric
+        e.g. 'steps' => FitStepsEntry
+    '''
+    constructor = None
+    if activity_metric == 'calories':
+        constructor = FitCaloriesEntry
+    elif activity_metric == 'steps':
+        constructor = FitStepsEntry
+    elif activity_metric == 'distance':
+        constructor = FitDistanceEntry
+    return constructor
