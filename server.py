@@ -1,6 +1,6 @@
-import otrapi
+from src.api import *
 import multiprocessing
-import Flask
+import flask
 
 app = flask.Flask(__name__)
 
@@ -17,12 +17,12 @@ def profile():
     return '<pre>' + str(parse.get_diabetes_profile()) + '</pre>'
 
 if __name__ == '__main__':
-    with otrapi.OtrApi(raw_input('username:\t').strip(), raw_input('password:\t').strip()) as otr_inst:
+    with otrapi.OtrApi(input('username:\t'), input('password:\t')) as otr_inst:
         global otr
         otr = otr_inst
         global flask_proc
         flask_proc = multiprocessing.Process(target=app.run)
         flask_proc.start()
-        _ = raw_input()
+        _ = input()
         flask_proc.terminate()
         flask_proc.join()

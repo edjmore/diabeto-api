@@ -1,4 +1,4 @@
-import logbook
+from ..model import logbook
 import base64,datetime as dt,json,time,urllib
 import requests
 
@@ -84,16 +84,16 @@ class FitApi(object):
         fit_user.refresh_token = response['refresh_token']
 
     def __basic_headers(self):
-		b64_id_secret = base64.b64encode(format('%s:%s' % (self.client_id,self.client_secret)))
-		authorization = format('Basic %s' % b64_id_secret)
-		return {
+        b64_id_secret = base64.b64encode(format('%s:%s' % (self.client_id,self.client_secret)))
+        authorization = format('Basic %s' % b64_id_secret)
+        return {
 			'Authorization': authorization,
 			'Content-Type' : 'application/x-www-form-urlencoded'
 			}
 
     def __bearer_headers(self, fit_user):
-		authorization = format('Bearer %s' % fit_user.access_token)
-		return {
+        authorization = format('Bearer %s' % fit_user.access_token)
+        return {
 			'Authorization': authorization
 			}
 

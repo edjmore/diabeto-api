@@ -1,5 +1,6 @@
-import logbook,diaprofile,util
-import datetime as dtjson,time
+from ..model import logbook,diaprofile
+from .. import util
+import datetime as dt,json,time
 import bs4,requests
 
 class OtrApi(object):
@@ -127,7 +128,7 @@ class OtrParser(object):
         bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range = \
             self.__get_bg_ranges()
         timeslots_sched = self.__get_timeslots_sched()
-        return diaprofile.Otrdiaprofile(
+        return diaprofile.OtrDiabetesProfile(
             diabetes_type,
             bg_tgt_range, bg_severe_range,
             bg_before_meal_range, bg_after_meal_range,
