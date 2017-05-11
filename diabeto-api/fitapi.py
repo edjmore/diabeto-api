@@ -1,4 +1,6 @@
-import base64,json,time,urllib
+
+import logbookentry
+import base64,datetime as dt,json,time,urllib
 import requests
 
 class FitApi(object):
@@ -8,7 +10,7 @@ class FitApi(object):
         self.redirect_url = redirect_url
 
     def get_activity_time_series(self, fit_user, activity_metric, start_date, end_date='1d', start_time=None, end_time=None, high_detail=False):
-        ''' Returns a series of logbook entries for activity data within the specified time range on the given date
+        ''' Returns JSON for a series of logbook entries for activity data within the specified time range on the given date
         @fit_user           an authenticated Fitbit user
         @activity_metric    one of 'calories', 'steps', or 'distance'
         @start_date         start date in yyyy-MM-dd format (or 'today')
@@ -123,3 +125,30 @@ class FitUser(object):
             self.refresh_token,
             self.scope
             ]))
+
+class FitParser(object):
+    def __init__(self, raw_json):
+        self.__json = json.loads(raw_json)
+
+    def get_logbook_entries(self):
+        ''' Returns a list of FitLogbookEntry objects parsed from the raw JSON
+        '''
+        logbook_entries = []
+        activity_metric = self.__json.keys()[0].split('-')[1]
+        fullday_key = format('activities-%s' % activity_metric)
+        intraday_key = format('%s-intraday' % fullday_key)
+        fullday_arr = self.__json[fullday_key]
+        if len(fullday_arr) > 1:
+            # Fitbit API returns daily summary when multiple dates are
+            # requested; meaning no intraday logbook entries
+            pass
+        else:
+            constructor = logbookentry.get_fit_logentry_constructor(activity_metric)
+            entry_date = dt.datetime.strptime(fullday_arr[0]['dateTime'], '%Y-%m-%d').date()
+            for json_entry in self.__json[intraday_key]['dataset']:
+                entry_time = dt.datetime.strptime(json_entry['time'], '%H:%M:%S').time()
+                entry = constructor(
+                    entry_date, entry_time, json_entry['value']
+                    )
+                logbook_entries.append(entry)
+        return logbook_entries

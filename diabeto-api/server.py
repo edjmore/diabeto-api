@@ -1,4 +1,4 @@
-import otrapi,otrparser
+import otrapi
 import multiprocessing
 import Flask
 
@@ -7,13 +7,13 @@ app = flask.Flask(__name__)
 @app.route('/logbook/<start_date>/<end_date>')
 def logbook(start_date, end_date):
     raw_html = otr.get_data_list_report(start_date, end_date)
-    parse = otrparser.OtrParser(raw_html)
+    parse = otrapi.OtrParser(raw_html)
     return '<pre>' + '\n'.join(map(str, parse.get_logbook_entries())) + '</pre>'
 
 @app.route('/profile')
 def profile():
     raw_html = otr.get_profile()
-    parse = otrparser.OtrParser(raw_html)
+    parse = otrapi.OtrParser(raw_html)
     return '<pre>' + str(parse.get_diabetes_profile()) + '</pre>'
 
 if __name__ == '__main__':
