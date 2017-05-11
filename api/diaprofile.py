@@ -1,5 +1,3 @@
-import logbookentry
-
 class DiabetesProfile(object):
     def __init__(self, diabetes_type, bg_tgt_range, bg_severe_range):
         self.diabetes_type = diabetes_type

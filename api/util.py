@@ -1,4 +1,3 @@
-
 class Range(object):
     ''' Represents a range given by two values
     @lo     the lower value

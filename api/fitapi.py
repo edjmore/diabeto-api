@@ -1,5 +1,4 @@
-
-import logbookentry
+import logbook
 import base64,datetime as dt,json,time,urllib
 import requests
 
@@ -131,7 +130,7 @@ class FitParser(object):
         self.__json = json.loads(raw_json)
 
     def get_logbook_entries(self):
-        ''' Returns a list of FitLogbookEntry objects parsed from the raw JSON
+        ''' Returns a list of Fitlogbook objects parsed from the raw JSON
         '''
         logbook_entries = []
         activity_metric = self.__json.keys()[0].split('-')[1]
@@ -143,7 +142,7 @@ class FitParser(object):
             # requested; meaning no intraday logbook entries
             pass
         else:
-            constructor = logbookentry.get_fit_logentry_constructor(activity_metric)
+            constructor = logbook.get_fit_logentry_constructor(activity_metric)
             entry_date = dt.datetime.strptime(fullday_arr[0]['dateTime'], '%Y-%m-%d').date()
             for json_entry in self.__json[intraday_key]['dataset']:
                 entry_time = dt.datetime.strptime(json_entry['time'], '%H:%M:%S').time()

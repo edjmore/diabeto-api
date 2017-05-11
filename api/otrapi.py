@@ -1,4 +1,4 @@
-import logbookentry,diabetesprofile,util
+import logbook,diaprofile,util
 import datetime as dtjson,time
 import bs4,requests
 
@@ -112,10 +112,10 @@ class OtrParser(object):
             otr_comments = cells[6].get_text()
             if entry_type == 'Glucose':
                 bg_value = int(cells[4].get_text().split(' ')[0])
-                logbook_entries.append(logbookentry.OtrGlucoseEntry(entry_date, entry_time, otr_comments, bg_value))
+                logbook_entries.append(logbook.OtrGlucoseEntry(entry_date, entry_time, otr_comments, bg_value))
             elif entry_type == 'BG Pattern':
                 pass
-                logbook_entries.append(logbookentry.OtrPatternEntry(entry_date, entry_time, otr_comments))
+                logbook_entries.append(logbook.OtrPatternEntry(entry_date, entry_time, otr_comments))
             else:
                 print('*** OtrParser: unknown entry type "%s" ***' % entry_type)
         return logbook_entries
@@ -127,7 +127,7 @@ class OtrParser(object):
         bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range = \
             self.__get_bg_ranges()
         timeslots_sched = self.__get_timeslots_sched()
-        return diabetesprofile.OtrDiabetesProfile(
+        return diaprofile.Otrdiaprofile(
             diabetes_type,
             bg_tgt_range, bg_severe_range,
             bg_before_meal_range, bg_after_meal_range,
@@ -166,4 +166,4 @@ class OtrParser(object):
             start,end = map(lambda tok: tok.strip(), time.split('-'))
             time_range = util.Range(t(start), t(end))
             raw_sched.append((name,time_range))
-        return diabetesprofile.OtrTimeslotsSched(raw_sched)
+        return diaprofile.OtrTimeslotsSched(raw_sched)
