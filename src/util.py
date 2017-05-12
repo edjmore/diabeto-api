@@ -1,3 +1,5 @@
+import abc
+
 class Range(object):
     ''' Represents a range given by two values
     @lo     the lower value
@@ -15,4 +17,24 @@ class Range(object):
         return self.lo <= v and v <= self.hi
 
     def __str__(self):
-        return format('%s - %s' % (self.lo,self.hi))
+        return format('%s-%s' % (self.lo,self.hi))
+
+class abstractclassmethod(classmethod):
+    __isabstractmethod__ = True
+
+    def __init__(self, callable):
+        callable.__isabstractmethod__ = True
+        super(abstractclassmethod, self).__init__(callable)
+
+class ICsvObj(object):
+    ''' Interface for classes that can be exported to CSV strings
+    '''
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractclassmethod
+    def get_csv_headers(cls):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def to_csv(self):
+        return self.__str__()

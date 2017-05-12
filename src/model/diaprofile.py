@@ -1,4 +1,6 @@
-class DiabetesProfile(object):
+from .. import util
+
+class DiabetesProfile(util.ICsvObj):
     def __init__(self, diabetes_type, bg_tgt_range, bg_severe_range):
         self.diabetes_type = diabetes_type
         self.bg_tgt_range = bg_tgt_range
@@ -11,19 +13,14 @@ class OtrDiabetesProfile(DiabetesProfile):
         self.bg_after_meal_range = bg_after_meal_range
         self.otr_timeslots_sched = otr_timeslots_sched
 
-    def __str__(self):
-        rng_str = lambda name_rng: format('%s: %s mg/dL' % name_rng)
-        return format('Diabetes type: %s\n--\n%s\n--\n%s' % (self.diabetes_type,
-            '\n'.join(map(rng_str, [
-                ('Bg target range',self.bg_tgt_range),
-                ('Bg severe range',self.bg_severe_range),
-                ('Bg before meal',self.bg_before_meal_range),
-                ('Bg after meal',self.bg_after_meal_range)
-                ])),
-            self.otr_timeslots_sched
+    def to_csv(self):
+        return format('diabetes_type,%s\n\nbg_target_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range\n%s\n\n%s' % (
+            self.diabetes_type,
+            ','.join(map(str, [self.bg_tgt_range, self.bg_severe_range, self.bg_before_meal_range, self.bg_after_meal_range])),
+            self.otr_timeslots_sched.get_csv_headers() + self.otr_timeslots_sched.to_csv()
             ))
 
-class OtrTimeslotsSched(object):
+class OtrTimeslotsSched(util.ICsvObj):
     ''' Represents the otr labeling system mapping time ranges throughout the day to labels, e.g. "7pm - 10pm -> After Dinner"
     '''
     def __init__(self, raw_sched):
@@ -52,9 +49,13 @@ class OtrTimeslotsSched(object):
         else:
             return self.__get_otr_timeslot(entry_time, mid_idx+1, hi_idx)
 
+    @classmethod
+    def get_csv_headers(cls):
+        return 'timeslot,start_time,end_time'
+
     def __str__(self):
         res = ''
         s = lambda t: t.strftime('%I:%M %p')
         for name,time_range in self.__sorted_sched:
-            res += format('%s: %s - %s\n' % (name,s(time_range.lo),s(time_range.hi)))
+            res += format('%s,%s,%s\n' % (name,s(time_range.lo),s(time_range.hi)))
         return res
