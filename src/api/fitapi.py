@@ -30,6 +30,8 @@ class FitApi(object):
         url += '.json'
         headers = self.__bearer_headers(fit_user)
         response = requests.get(url, headers=headers)
+        if response.status_code != requests.codes.ok:
+            raise FitApiError(response.text, status_code=response.status_code)
         return response.text
 
     def get_auth_page_url(self):
@@ -62,6 +64,8 @@ class FitApi(object):
 			'code'        : auth_code
 			}
         response = requests.post(FitApi.__token_url(), headers=headers, params=data)
+        if response.status_code != requests.codes.ok:
+            raise FitApiError(response.text, status_code=response.status_code)
         response = json.loads(response.text)
         return FitUser(
             response['user_id'],
@@ -81,6 +85,8 @@ class FitApi(object):
 			'refresh_token': fit_user.refresh_token
             }
         response = requests.post(FitApi.__token_url(), headers=headers, params=data)
+        if response.status_code != requests.codes.ok:
+            raise FitApiError(response.text, status_code=response.status_code)
         fit_user.access_token = response['access_token']
         fit_user.auth_exp_time = time.time() + int(response['expires_in'])
         fit_user.refresh_token = response['refresh_token']
@@ -107,6 +113,13 @@ class FitApi(object):
     @staticmethod
     def __token_url():
         return 'https://api.fitbit.com/oauth2/token'
+
+
+class FitApiError(util.AbstractDiabetoError):
+
+    @classmethod
+    def __default_status_code(cls):
+        return 502 # bad gateway
 
 
 class FitUser(util.IJsonObj):
@@ -148,11 +161,23 @@ class FitParser(object):
             pass
         else:
             constructor = logbook.get_fit_logentry_constructor(activity_metric)
-            entry_date = dt.datetime.strptime(fullday_arr[0]['dateTime'], '%Y-%m-%d').date()
-            for json_entry in self.__json[intraday_key]['dataset']:
-                entry_time = dt.datetime.strptime(json_entry['time'], '%H:%M:%S').time()
-                entry = constructor(
-                    entry_date, entry_time, json_entry['value']
-                    )
-                logbook_entries.append(entry)
+            if constructor is None:
+                raise FitParserError(format('Unknown activity type \'%s\'' % activity_metric), payload=self.__json)
+            try:
+                entry_date = dt.datetime.strptime(fullday_arr[0]['dateTime'], '%Y-%m-%d').date()
+                for json_entry in self.__json[intraday_key]['dataset']:
+                    entry_time = dt.datetime.strptime(json_entry['time'], '%H:%M:%S').time()
+                    entry = constructor(
+                        entry_date, entry_time, json_entry['value']
+                        )
+                    logbook_entries.append(entry)
+            except Exception as e:
+                raise FitParserError('Error parsing response JSON', payload=self.__json)
         return logbook_entries
+
+
+class FitParserError(util.AbstractDiabetoError):
+
+    @classmethod
+    def __default_status_code(cls):
+        return 500 # internal server error
