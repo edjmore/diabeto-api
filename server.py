@@ -1,3 +1,4 @@
+from src import util
 from src.api import *
 from src.model import *
 import multiprocessing,os
@@ -23,7 +24,7 @@ def fitbit_login():
     else:
         return url
 
-@app.route('/fitbit-redirect', methods=['GET', 'POST'])
+@app.route('/fitbit-redirect', methods=['GET'])
 def flask_redirect():
     """ Redirect page to which the Fitbit auth code is returned; returns JSON
     representation of user credentials on success.
@@ -110,12 +111,9 @@ def __do_otr_login(request_form):
         username = request_form['username']
         password = request_form['password']
         otr_user = otrapi.OtrApi(username, password)
-        try:
-            otr_user.login()
-        except:
-            flask.abort(401) # todo: OTR login failed page
+        otr_user.login()
         return otr_user
-    flask.abort(401) # todo: invalid request error page
+    flask.abort(400, 'Must provide OTR username & password in request form: \n%s' % str(request_form))
 
 def __csv_download(csv, fname):
     return flask.Response(
@@ -124,6 +122,12 @@ def __csv_download(csv, fname):
         headers={
             'Content-disposition': format('attachment; filename=%s' % fname)
         })
+
+@app.errorhandler(util.AbstractApiError)
+def handle_api_error(e):
+    response = flask.jsonify(e.to_dict())
+    response.status_code = e.status_code
+    return response
 
 if __name__ == '__main__':
     app.run()

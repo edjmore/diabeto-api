@@ -53,12 +53,12 @@ class IJsonObj(object):
         return json.dumps(self, default=lambda o: o.__dict__)
 
 
-class AbstractDiabetoError(Exception):
+class AbstractApiError(Exception):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, msg, status_code=None, payload=None):
+    def __init__(self, message, status_code=None, payload=None):
         Exception.__init__(self)
-        self.msg = msg
+        self.message = message
         self.status_code = self.__class__.__default_status_code() if status_code is None else status_code
         self.payload = payload
 
@@ -68,5 +68,5 @@ class AbstractDiabetoError(Exception):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['msg'] = self.msg
+        rv['message'] = self.message
         return rv

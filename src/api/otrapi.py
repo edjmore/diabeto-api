@@ -98,7 +98,7 @@ class OtrApi(object):
         return format('https://onetouchreveal.com/%s' % dest)
 
 
-class OtrApiError(util.AbstractDiabetoError):
+class OtrApiError(util.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):
@@ -183,7 +183,7 @@ class OtrParser(object):
         return diaprofile.OtrTimeslotsSched(raw_sched)
 
 
-class OtrParserError(util.AbstractDiabetoError):
+class OtrParserError(util.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):

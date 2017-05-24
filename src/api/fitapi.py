@@ -115,7 +115,7 @@ class FitApi(object):
         return 'https://api.fitbit.com/oauth2/token'
 
 
-class FitApiError(util.AbstractDiabetoError):
+class FitApiError(util.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):
@@ -176,7 +176,7 @@ class FitParser(object):
         return logbook_entries
 
 
-class FitParserError(util.AbstractDiabetoError):
+class FitParserError(util.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):
