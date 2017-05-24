@@ -1,10 +1,12 @@
 from .. import util
 
+
 class DiabetesProfile(util.ICsvObj):
     def __init__(self, diabetes_type, bg_tgt_range, bg_severe_range):
         self.diabetes_type = diabetes_type
         self.bg_tgt_range = bg_tgt_range
         self.bg_severe_range = bg_severe_range
+
 
 class OtrDiabetesProfile(DiabetesProfile):
     def __init__(self, diabetes_type, bg_tgt_range, bg_severe_range, bg_before_meal_range, bg_after_meal_range, otr_timeslots_sched):
@@ -19,6 +21,7 @@ class OtrDiabetesProfile(DiabetesProfile):
             ','.join(map(str, [self.bg_tgt_range, self.bg_severe_range, self.bg_before_meal_range, self.bg_after_meal_range])),
             self.otr_timeslots_sched.get_csv_headers() + self.otr_timeslots_sched.to_csv()
             ))
+
 
 class OtrTimeslotsSched(util.ICsvObj):
     ''' Represents the otr labeling system mapping time ranges throughout the day to labels, e.g. "7pm - 10pm -> After Dinner"

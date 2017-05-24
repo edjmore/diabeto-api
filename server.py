@@ -14,6 +14,9 @@ fit_api = fitapi.FitApi(
 
 @app.route('/fitbit-login', methods=['GET', 'POST'])
 def fitbit_login():
+    """ Begin Fitbit login process. Browsers get redirected to auth page,
+    other clients get the URL of the auth page.
+    """
     url =  fit_api.get_auth_page_url()
     if flask.request.method == 'GET':
         return flask.redirect(url)
@@ -22,6 +25,9 @@ def fitbit_login():
 
 @app.route('/fitbit-redirect', methods=['GET', 'POST'])
 def flask_redirect():
+    """ Redirect page to which the Fitbit auth code is returned; returns JSON
+    representation of user credentials on success.
+    """
     auth_code = flask.request.args['code']
     fit_user = fit_api.login(auth_code)
     return fit_user.to_json()
@@ -29,6 +35,10 @@ def flask_redirect():
 @app.route('/fitbit-activity/<activity_metric>/<start_date>', methods=['POST'])
 @app.route('/fitbit-activity/<activity_metric>/<start_date>/<end_date>/<start_time>/<end_time>/<high_detail>', methods=['POST'])
 def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None, end_time=None, high_detail=None):
+    """ Returns the intraday activity time series for the given metric. See
+    FitApi.get_activity_time_series() for more information. If no valid user
+    credentials are provided redirects to the login page.
+    """
     fit_user = __get_fit_user(flask.request.form)
     if fit_user is None:
         return flask.redirect(flask.url_for('fitbit_login'))
@@ -55,6 +65,7 @@ def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None,
     return __csv_download(csv, fname)
 
 def __get_fit_user(request_form):
+    # Attempts to create an authorized FitUser object; refreshing access token if necessary.
     chk = lambda k: k in request_form
     if chk('user_id') and chk('access_token') and chk('auth_exp_time') and chk('refresh_token') and chk('scope'):
         fit_user = fitapi.FitUser(
@@ -71,6 +82,7 @@ def __get_fit_user(request_form):
 
 @app.route('/otr-logbook/<start_date>/<end_date>', methods=['POST'])
 def otr_logbook(start_date, end_date):
+    """ Returns OneTouchReveal logbook entries for the given period. """
     otr_user = __do_otr_login(flask.request.form)
     raw_html = otr_user.get_data_list_report(start_date, end_date)
     fname = format('%s_otr-logbook_%s-%s.csv' % (
@@ -84,6 +96,7 @@ def otr_logbook(start_date, end_date):
 
 @app.route('/otr-profile', methods=['POST'])
 def otr_profile():
+    """ Returns the user's OneTouchReveal diabetes profile. """
     otr_user = __do_otr_login(flask.request.form)
     raw_html = otr_user.get_profile()
     fname = format('%s_otr-profile.csv' % otr_user.username)

@@ -3,6 +3,7 @@ from .. import util
 import base64,datetime as dt,hashlib,json,time,urllib
 import requests
 
+
 class FitApi(object):
     def __init__(self, client_id, client_secret, redirect_url):
         self.client_id = client_id
@@ -107,6 +108,7 @@ class FitApi(object):
     def __token_url():
         return 'https://api.fitbit.com/oauth2/token'
 
+
 class FitUser(util.IJsonObj):
     def __init__(self, user_id, access_token, auth_exp_time, refresh_token, scope):
         self.user_id = user_id
@@ -126,6 +128,7 @@ class FitUser(util.IJsonObj):
             self.refresh_token,
             self.scope
             ]))
+
 
 class FitParser(object):
     def __init__(self, raw_json):

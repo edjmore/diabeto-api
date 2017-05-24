@@ -3,6 +3,7 @@ from .. import util
 import datetime as dt,json,time
 import bs4,requests
 
+
 class OtrApi(object):
     def __init__(self, username, password):
         self.username = username
@@ -56,7 +57,7 @@ class OtrApi(object):
         data = {'ajaxRequest': ajax_request}
         response = self.session.post(OtrApi.__url(), data=data)
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+            raise OtrApiError(response.text, status_code=response.status_code)
 
     def logout(self):
         ''' Logs out of the otr site, raises error on failure
@@ -64,7 +65,7 @@ class OtrApi(object):
         data = {'ajaxRequest': '[{"moduleName":"Account","methodCall":"logout"}]'}
         response = self.session.post(OtrApi.__url(), data=data)
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+            raise OtrApiError(response.text, status_code=response.status_code)
 
     def get_data_list_report(self, start_date, end_date):
         ''' Returns a raw html report of logbook entries for the given period
@@ -78,20 +79,31 @@ class OtrApi(object):
         data = {'ajaxRequest': ajax_request}
         response = self.session.post(OtrApi.__url(), data=data)
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
-        return json.loads(response.text)['response']['report']
+            raise OtrApiError(response.text, status_code=response.status_code)
+        try:
+            return json.loads(response.text)['response']['report']
+        except Exception as e:
+            raise OtrApiError(str(e), status_code=500, payload=response.text)
 
     def get_profile(self):
         ''' Returns the raw html from user's profile page
         '''
         response = self.session.get(OtrApi.__url('settings/profile/'))
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+            raise OtrApiError(response.text, status_code=response.status_code)
         return response.text
 
     @staticmethod
     def __url(dest='a/'):
         return format('https://onetouchreveal.com/%s' % dest)
+
+
+class OtrApiError(util.AbstractDiabetoError):
+
+    @classmethod
+    def __default_status_code(cls):
+        return 502 # bad gateway
+
 
 class OtrParser(object):
     def __init__(self, raw_html):
@@ -100,36 +112,41 @@ class OtrParser(object):
     def get_logbook_entries(self):
         ''' Returns a list of logbook entries parsed from the html
         '''
-        logbook_entries = []
-        for tbl_row in self.__soup.find_all('tr')[1:]:
-            cells = tbl_row.find_all('div')
-            entry_date = dt.datetime.strptime(cells[0].get_text(), '%m/%d/%Y').date()
-            entry_time = dt.datetime.strptime(cells[1].get_text(), '%I:%M %p').time()
-            entry_type = cells[3].get_text()
-            otr_comments = cells[6].get_text()
-            if entry_type == 'Glucose':
-                bg_value = int(cells[4].get_text().split(' ')[0])
-                logbook_entries.append(logbook.OtrGlucoseEntry(entry_date, entry_time, otr_comments, bg_value))
-            elif entry_type == 'BG Pattern':
-                pass
-                logbook_entries.append(logbook.OtrPatternEntry(entry_date, entry_time, otr_comments))
-            else:
-                print('*** OtrParser: unknown entry type "%s" ***' % entry_type)
-        return logbook_entries
+        try:
+            logbook_entries = []
+            for tbl_row in self.__soup.find_all('tr')[1:]:
+                cells = tbl_row.find_all('div')
+                entry_date = dt.datetime.strptime(cells[0].get_text(), '%m/%d/%Y').date()
+                entry_time = dt.datetime.strptime(cells[1].get_text(), '%I:%M %p').time()
+                entry_type = cells[3].get_text()
+                otr_comments = cells[6].get_text()
+                if entry_type == 'Glucose':
+                    bg_value = int(cells[4].get_text().split(' ')[0])
+                    logbook_entries.append(logbook.OtrGlucoseEntry(entry_date, entry_time, otr_comments, bg_value))
+                elif entry_type == 'BG Pattern':
+                    logbook_entries.append(logbook.OtrPatternEntry(entry_date, entry_time, otr_comments))
+                else:
+                    print('*** OtrParser: unknown entry type "%s" ***' % entry_type)
+            return logbook_entries
+        except Exception as e:
+            raise OtrParserError(str(e))
 
     def get_diabetes_profile(self):
         ''' Parses the user's diabetes profile
         '''
-        diabetes_type = self.__get_diabetes_type()
-        bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range = \
-            self.__get_bg_ranges()
-        timeslots_sched = self.__get_timeslots_sched()
-        return diaprofile.OtrDiabetesProfile(
-            diabetes_type,
-            bg_tgt_range, bg_severe_range,
-            bg_before_meal_range, bg_after_meal_range,
-            timeslots_sched
-            )
+        try:
+            diabetes_type = self.__get_diabetes_type()
+            bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range = \
+                self.__get_bg_ranges()
+            timeslots_sched = self.__get_timeslots_sched()
+            return diaprofile.OtrDiabetesProfile(
+                diabetes_type,
+                bg_tgt_range, bg_severe_range,
+                bg_before_meal_range, bg_after_meal_range,
+                timeslots_sched
+                )
+        except Exception as e:
+            raise OtrParserError(str(e))
 
     def __get_diabetes_type(self):
         # Returns text indicating the user's diabetes type; e.g. Type 1, Type 2, or Gestational
@@ -164,3 +181,10 @@ class OtrParser(object):
             time_range = util.Range(t(start), t(end))
             raw_sched.append((name,time_range))
         return diaprofile.OtrTimeslotsSched(raw_sched)
+
+
+class OtrParserError(util.AbstractDiabetoError):
+
+    @classmethod
+    def __default_status_code(cls):
+        return 500 # internal server error
