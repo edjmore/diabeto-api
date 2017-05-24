@@ -1,4 +1,4 @@
-import abc
+import abc,json
 
 class Range(object):
     ''' Represents a range given by two values
@@ -38,3 +38,12 @@ class ICsvObj(object):
     @abc.abstractmethod
     def to_csv(self):
         return self.__str__()
+
+class IJsonObj(object):
+    ''' Interface for classes that can be converted to JSON
+    '''
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__)

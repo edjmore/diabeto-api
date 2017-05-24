@@ -12,76 +12,66 @@ fit_api = fitapi.FitApi(
     'http://localhost:5000/fitbit-redirect'
     )
 
-fit_user_manager = None
-try:
-    # todo: connect to PostgreSQL database
-    db_conn = None
-    fit_user_manager = fitapi.FitUserManager(db_conn)
-except NotImplementedError:
-    fit_user_manager = fitapi.DebugFitUserManager()
-
 @app.route('/fitbit-login', methods=['GET', 'POST'])
 def fitbit_login():
-    if flask.request.method == 'POST':
-        if 'user_id' in flask.request.form and 'access_token' in flask.request.form:
-            fit_user = fit_user_manager.get_user(
-                flask.request.form['user_id'],
-                flask.request.form['access_token']
-                )
-            if fit_user is not None:
-                __flask_session_login(fit_user)
-                return flask.redirect('fitbit_login_status')
-    return flask.redirect(fit_api.get_auth_page_url())
+    url =  fit_api.get_auth_page_url()
+    if flask.request.method == 'GET':
+        return flask.redirect(url)
+    else:
+        return url
 
-@app.route('/fitbit-redirect', methods=['GET'])
-def fitbit_redirect():
+@app.route('/fitbit-redirect', methods=['GET', 'POST'])
+def flask_redirect():
     auth_code = flask.request.args['code']
     fit_user = fit_api.login(auth_code)
-    fit_user_manager.store_user(fit_user)
-    __flask_session_login(fit_user)
-    return flask.redirect(flask.url_for('fitbit_login_status'))
+    return fit_user.to_json()
 
-@app.route('/fitbit-logout', methods=['GET', 'POST'])
-def fitbit_logout():
-    __flask_session_logout()
-    return flask.redirect(flask.url_for('fitbit_login_status'))
-
-@app.route('/fitbit-login-status', methods=['GET'])
-def fitbit_login_status():
-    fit_user = __flask_session_get_user()
+@app.route('/fitbit-activity/<activity_metric>/<start_date>', methods=['POST'])
+@app.route('/fitbit-activity/<activity_metric>/<start_date>/<end_date>/<start_time>/<end_time>/<high_detail>', methods=['POST'])
+def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None, end_time=None, high_detail=None):
+    fit_user = __get_fit_user(flask.request.form)
     if fit_user is None:
-        return '<pre>Not logged in</pre>'
-    return format('<pre>Logged in as %s:\n%s</pre>' % (fit_user.user_id,str(fit_user)))
-
-def __flask_session_login(fit_user):
-    flask.session['user_id'] = fit_user.user_id
-    flask.session['access_token'] = fit_user.access_token
-
-def __flask_session_get_user():
-    if 'user_id' in flask.session and 'access_token' in flask.session:
-        if 'auth_exp_time' in flask.session and 'refresh_token' in flask.session and 'scope' in flask.session:
-            return fitapi.FitUser(
-                flask.session['user_id'],
-                flask.session['access_token'],
-                flask.session['auth_exp_time'],
-                flask.session['refresh_token'],
-                flask.session['scope']
-                )
-        return fit_user_manager.get_user(
-            flask.session['user_id'],
-            flask.session['access_token']
+        return flask.redirect(flask.url_for('fitbit_login'))
+    raw_json = None
+    if end_date is None:
+        raw_json = fit_api.get_activity_time_series(fit_user, activity_metric, start_date)
+    else:
+        raw_json = fit_api.get_activity_time_series(
+            fit_user,
+            activity_metric,
+            start_date,
+            end_date=end_date,
+            start_time=start_time,
+            end_time=end_time,
+            high_detail=high_detail
             )
-    return None
+    parser = fitapi.FitParser(raw_json)
+    logbook_entries = parser.get_logbook_entries()
+    fname = format('fitbit-%s_%s.csv' % (activity_metric,start_date))
+    csv = ''
+    if len(logbook_entries) > 0:
+        csv += logbook_entries[0].__class__.get_csv_headers() + '\n'
+        csv += '\n'.join(map(lambda e: e.to_csv(), logbook_entries))
+    return __csv_download(csv, fname)
 
-def __flask_session_logout():
-    flask.session.pop('user_id', None)
-    flask.session.pop('access_token', None)
+def __get_fit_user(request_form):
+    chk = lambda k: k in request_form
+    if chk('user_id') and chk('access_token') and chk('auth_exp_time') and chk('refresh_token') and chk('scope'):
+        fit_user = fitapi.FitUser(
+            request_form['user_id'],
+            request_form['access_token'],
+            request_form['auth_exp_time'],
+            request_form['refresh_token'],
+            request_form['scope'],
+            )
+        if fit_user.is_auth_expired():
+            fit_api.refresh_token(fit_user)
+        return fit_user
+    return None
 
 @app.route('/otr-logbook/<start_date>/<end_date>', methods=['POST'])
 def otr_logbook(start_date, end_date):
     otr_user = __do_otr_login(flask.request.form)
-    if not otr_user:
-        flask.abort(401)
     raw_html = otr_user.get_data_list_report(start_date, end_date)
     fname = format('%s_otr-logbook_%s-%s.csv' % (
         otr_user.username,start_date,end_date
@@ -95,8 +85,6 @@ def otr_logbook(start_date, end_date):
 @app.route('/otr-profile', methods=['POST'])
 def otr_profile():
     otr_user = __do_otr_login(flask.request.form)
-    if not otr_user:
-        flask.abort(401)
     raw_html = otr_user.get_profile()
     fname = format('%s_otr-profile.csv' % otr_user.username)
     otr_user.logout()
@@ -105,14 +93,16 @@ def otr_profile():
     return __csv_download(csv, fname)
 
 def __do_otr_login(request_form):
-    username = request_form['username']
-    password = request_form['password']
-    otr_user = otrapi.OtrApi(username, password)
-    try:
-        otr_user.login()
-    except:
-        otr_user = None
-    return otr_user
+    if 'username' in request_form and 'password' in request_form:
+        username = request_form['username']
+        password = request_form['password']
+        otr_user = otrapi.OtrApi(username, password)
+        try:
+            otr_user.login()
+        except:
+            flask.abort(401) # todo: OTR login failed page
+        return otr_user
+    flask.abort(401) # todo: invalid request error page
 
 def __csv_download(csv, fname):
     return flask.Response(
@@ -123,9 +113,4 @@ def __csv_download(csv, fname):
         })
 
 if __name__ == '__main__':
-    global flask_proc
-    flask_proc = multiprocessing.Process(target=app.run)
-    flask_proc.start()
-    _ = input()
-    flask_proc.terminate()
-    flask_proc.join()
+    app.run()

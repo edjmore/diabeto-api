@@ -49,7 +49,6 @@ class OtrApi(object):
     def login(self):
         ''' Logs in to the otr site, raises error on failure
         '''
-        print('login POST')
         ajax_request = format(
             '[{"moduleName":"Account","methodCall":"login","params":[{"username":"%s","password":"%s","clientTime":"%s"}]}]'
                 % (self.username,self.password,time.strftime('%Y-%m-%d %H:%M', time.localtime()))
@@ -62,7 +61,6 @@ class OtrApi(object):
     def logout(self):
         ''' Logs out of the otr site, raises error on failure
         '''
-        print('logout POST')
         data = {'ajaxRequest': '[{"moduleName":"Account","methodCall":"logout"}]'}
         response = self.session.post(OtrApi.__url(), data=data)
         if response.status_code != requests.codes.ok:
@@ -73,7 +71,6 @@ class OtrApi(object):
         @start_date     start of period, date string formatted as "%Y%m%d"
         @end_date       end of period, ^same format as @start_date
         '''
-        print('get_data_list_report POST')
         ajax_request = format(
             '[{"moduleName":"Report","methodCall":"getSingleHTMLReport","params":[{"reportId":"DATA_LIST","numberDays":"0","startDt":"%s","endDt":"%s","options":{},"sortAscending":true,"patientClinicId":""}]}]'
                 % (start_date,end_date)
@@ -87,7 +84,6 @@ class OtrApi(object):
     def get_profile(self):
         ''' Returns the raw html from user's profile page
         '''
-        print('get_profile GET')
         response = self.session.get(OtrApi.__url('settings/profile/'))
         if response.status_code != requests.codes.ok:
             response.raise_for_status()

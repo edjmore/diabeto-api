@@ -1,4 +1,5 @@
 from ..model import logbook
+from .. import util
 import base64,datetime as dt,hashlib,json,time,urllib
 import requests
 
@@ -93,7 +94,7 @@ class FitApi(object):
 			}
 
     def __bearer_headers(self, fit_user):
-        authorization = b'Bearer ' + fit_user.access_token
+        authorization = b'Bearer ' + fit_user.access_token.encode('utf-8')
         return {
 			'Authorization': authorization
 			}
@@ -106,11 +107,11 @@ class FitApi(object):
     def __token_url():
         return 'https://api.fitbit.com/oauth2/token'
 
-class FitUser(object):
+class FitUser(util.IJsonObj):
     def __init__(self, user_id, access_token, auth_exp_time, refresh_token, scope):
         self.user_id = user_id
         self.access_token = access_token
-        self.auth_exp_time = auth_exp_time
+        self.auth_exp_time = float(auth_exp_time)
         self.refresh_token = refresh_token
         self.scope = scope
 
@@ -126,71 +127,6 @@ class FitUser(object):
             self.scope
             ]))
 
-class FitUserManager(object):
-    ''' Manages the PostgreSQL database of Fitbit users
-    '''
-
-    def __init__(self, db_conn):
-        self.__db_conn = db_conn
-        throw NotImplementedError()
-
-    def store_user(self, fit_user):
-        ''' Store user information in database: user ID, hashed access token,
-            auth exp time, and refresh token
-        @fit_user   authorized FitUser object
-        '''
-        hashed_access_token = FitUserManager.__hashed_access_token(fit_user.access_token)
-        # if user_id already exists we just update the other fields (in case these are new tokens)
-        q = format('''INSERT INTO fit_users (user_id,hashed_access_token,auth_exp_time,refresh_token)
-                VALUES (%s,%s,%s,%s)
-                ON CONFLICT (user_id)
-                DO UPDATE SET (hashed_access_token,auth_exp_time,refresh_token)=(%s,%s,%s)'''
-                % (fit_user.user_id,hashed_access_token,fit_user.auth_exp_time,fit_user.refresh_token,
-                    hashed_access_token,fit_user.auth_exp_time,fit_user.refresh_token))
-        cur = self.__db_conn.cursor()
-        cur.execute(q)
-        self.__db_conn.commit()
-        cur.close()
-
-    def get_user(self, user_id, access_token):
-        ''' Respond to client request for Fitbit login; returns a FitUser
-            object if there is a user with the given user_id in our database AND
-            the provided access token matches ours (otw returns None)
-        @user_id        Fitbit username
-        @access_token   API token provided by Fitbit
-        '''
-        fit_user = None
-        q = format('''SELECT user_id,hashed_access_token,auth_exp_time,refresh_token FROM fit_users
-                WHERE user_id=%s AND hashed_access_token=%s'''
-                % (user_id,hashed_access_token))
-        cur = self.__db_conn.conn.cursor()
-        row = cur.fetchone()
-        if row is not None:
-            fit_user = FitUser(
-                user_id,
-                access_token,
-                row[2],
-                row[3]
-                )
-        return fit_user
-
-    @staticmethod
-    def __hashed_access_token(access_token):
-        m = hashlib.sha256()
-        m.update(access_token.encode('utf-8'))
-        return m.digest()
-
-class DebugFitUserManager(FitUserManager):
-    ''' Debug implementation of FitUserManager that does absolutely nothing; currently
-        using this because the PostgreSQL database has not been implemented
-    '''
-    
-    def store_user(self, fit_user):
-        pass
-
-    def get_user(self, user_id, access_token):
-        return None
-
 class FitParser(object):
     def __init__(self, raw_json):
         self.__json = json.loads(raw_json)
@@ -199,7 +135,7 @@ class FitParser(object):
         ''' Returns a list of Fitlogbook objects parsed from the raw JSON
         '''
         logbook_entries = []
-        activity_metric = self.__json.keys()[0].split('-')[1]
+        activity_metric = list(self.__json.keys())[0].split('-')[1]
         fullday_key = format('activities-%s' % activity_metric)
         intraday_key = format('%s-intraday' % fullday_key)
         fullday_arr = self.__json[fullday_key]
