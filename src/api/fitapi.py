@@ -1,5 +1,5 @@
 from ..model import logbook
-from .. import util
+from .. import common
 import base64,datetime as dt,hashlib,json,time,urllib
 import requests
 
@@ -117,14 +117,14 @@ class FitApi(object):
         return 'https://api.fitbit.com/oauth2/token'
 
 
-class FitApiError(util.AbstractApiError):
+class FitApiError(common.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):
         return 502 # bad gateway
 
 
-class FitUser(util.IJsonObj):
+class FitUser(common.IJsonObj):
     def __init__(self, user_id, access_token, auth_exp_time, refresh_token, scope):
         self.user_id = user_id
         self.access_token = access_token
@@ -178,7 +178,7 @@ class FitParser(object):
         return logbook_entries
 
 
-class FitParserError(util.AbstractApiError):
+class FitParserError(common.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from src import util
+from src import common
 from src.api import *
 from src.model import *
+from util import *
 import multiprocessing,os
 import flask,requests
 
@@ -19,7 +20,7 @@ fit_api = fitapi.FitApi(
 @app.route('/', methods=['GET'])
 @app.route('/index', methods=['GET'])
 def index():
-    return 'Hello world!'
+    return flask.render_template('index.html', session_dump_str=str(flask.session))
 
 @app.route('/fitbit-login', methods=['GET'])
 def fitbit_login():
@@ -37,7 +38,10 @@ def fitbit_redirect():
     auth_code = flask.request.args['code']
     fit_user = fit_api.login(auth_code)
     sessionize_fit_user(fit_user)
-    goto_orig_dest_if_available()
+    redirect_url = flask.session.pop('redirect', None)
+    if redirect_url:
+        # Redirect back to original destination page
+        return flask.redirect(redirect_url)
     return flask.redirect('index')
 
 @app.route('/fitbit-activity/<activity_metric>/<start_date>', methods=['GET'])
@@ -50,7 +54,7 @@ def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None,
     fit_user = load_fit_user(flask.session)
     if fit_user is None:
         # Redirect back to this page after login
-        save_curr_dest_for_redirect()
+        flask.session['redirect'] = flask.request.path
         return flask.redirect(flask.url_for('fitbit_login'))
     raw_json = None
     if end_date is None:
@@ -77,19 +81,15 @@ def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None,
 @app.route('/otr-login', methods=['GET', 'POST'])
 def otr_login():
     if flask.request.method == 'GET':
-        return '''<form action="/otr-login" method="post">
-                    username:<br>
-                    <input type="text" name="username" value="">
-                    <br>
-                    password:<br>
-                    <input type="text" name="password" value="">
-                    <br><br>
-                    <input type="submit" value="login">
-                    </form>'''
+        return flask.render_template('otr-login.html')
     else:
         otr_user = load_otr_user(flask.request.form)
         sessionize_otr_user(otr_user)
-        goto_orig_dest_if_available()
+        redirect_url = flask.session.pop('redirect', None)
+        if redirect_url:
+            # Redirect back to original destination page
+            return flask.redirect(redirect_url)
+        return flask.redirect('index')
 
 @app.route('/otr-logbook/<start_date>/<end_date>', methods=['GET'])
 def otr_logbook(start_date, end_date):
@@ -97,7 +97,7 @@ def otr_logbook(start_date, end_date):
     otr_user = load_otr_user(flask.session)
     if otr_user is None:
         # Redirect back to this page after login
-        save_curr_dest_for_redirect()
+        flask.session['redirect'] = flask.request.path
         return flask.redirect(flask.url_for('otr_login'))
     otr_user.login()
     raw_html = otr_user.get_data_list_report(start_date, end_date)
@@ -116,7 +116,7 @@ def otr_profile():
     otr_user = load_otr_user(flask.session)
     if otr_user is None:
         # Redirect back to this page after login
-        save_curr_dest_for_redirect()
+        flask.session['redirect'] = flask.request.path
         return flask.redirect(flask.url_for('otr_login'))
     otr_user.login()
     raw_html = otr_user.get_profile()
@@ -126,56 +126,7 @@ def otr_profile():
     csv = parser.get_diabetes_profile().to_csv()
     return csv_download(csv, fname)
 
-def sessionize_fit_user(fit_user, session=flask.session):
-    session['user_id'] = fit_user.user_id
-    session['access_token'] = fit_user.access_token
-    session['auth_exp_time'] = fit_user.auth_exp_time
-    session['refresh_token'] = fit_user.refresh_token
-    session['scope'] = fit_user.scope
-
-def load_fit_user(dictlike):
-    # Attempts to create an authorized FitUser object; refreshing access token if necessary.
-    chk = lambda k: k in dictlike
-    if chk('user_id') and chk('access_token') and chk('auth_exp_time') and chk('refresh_token') and chk('scope'):
-        return fitapi.FitUser(
-            dictlike['user_id'],
-            dictlike['access_token'],
-            dictlike['auth_exp_time'],
-            dictlike['refresh_token'],
-            dictlike['scope'],
-            )
-    return None
-
-def sessionize_otr_user(otr_user, session=flask.session):
-    session['username'] = otr_user.username
-    session['password'] = otr_user.password
-
-def load_otr_user(dictlike):
-    if 'username' in dictlike and 'password' in dictlike:
-        username = dictlike['username']
-        password = dictlike['password']
-        return otrapi.OtrApi(username, password)
-    return None
-
-def save_curr_dest_for_redirect():
-    flask.session['redirect'] = \
-        app.config['SERVER_NAME'] + flask.request.path
-
-def goto_orig_dest_if_available():
-    redirect_url = flask.session.pop('redirect', None)
-    if redirect_url:
-        # Redirect back to original destination page
-        return flask.redirect(redirect_url)
-
-def csv_download(csv, fname):
-    return flask.Response(
-        csv,
-        mimetype='text/csv',
-        headers={
-            'Content-disposition': format('attachment; filename=%s' % fname)
-        })
-
-@app.errorhandler(util.AbstractApiError)
+@app.errorhandler(common.AbstractApiError)
 def handle_api_error(e):
     response = flask.jsonify(e.to_dict())
     response.status_code = e.status_code

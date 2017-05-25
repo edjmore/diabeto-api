@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+    function dumpSession() {
+      document.getElementById("session_dump").innerHTML = "{{ session_dump_str }}"
+    }
+    </script>
+  </head>
+  <body>
+    <button onclick="javascript: dumpSession()">Dump session</button>
+    <pre id="session_dump"><pre/>
+  </body>
+</html>

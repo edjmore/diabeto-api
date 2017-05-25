@@ -1,7 +1,7 @@
-from .. import util
+from .. import common
 
 
-class DiabetesProfile(util.ICsvObj):
+class DiabetesProfile(common.ICsvObj):
     def __init__(self, diabetes_type, bg_tgt_range, bg_severe_range):
         self.diabetes_type = diabetes_type
         self.bg_tgt_range = bg_tgt_range
@@ -23,7 +23,7 @@ class OtrDiabetesProfile(DiabetesProfile):
             ))
 
 
-class OtrTimeslotsSched(util.ICsvObj):
+class OtrTimeslotsSched(common.ICsvObj):
     ''' Represents the otr labeling system mapping time ranges throughout the day to labels, e.g. "7pm - 10pm -> After Dinner"
     '''
     def __init__(self, raw_sched):

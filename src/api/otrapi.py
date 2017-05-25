@@ -1,5 +1,5 @@
 from ..model import logbook,diaprofile
-from .. import util
+from .. import common
 import datetime as dt,json,time
 import bs4,requests
 
@@ -98,7 +98,7 @@ class OtrApi(object):
         return format('https://onetouchreveal.com/%s' % dest)
 
 
-class OtrApiError(util.AbstractApiError):
+class OtrApiError(common.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):
@@ -159,12 +159,12 @@ class OtrParser(object):
         # Finds the four target bg ranges in user profile
         #
         range_tbl = self.__soup.find('table', 'targetRanges')
-        tgt_rngs = lambda tr: util.Range(float(tr.find('td', 'target-range-low').get_text().strip()),float(tr.find('td', 'target-range-high').get_text().strip()))
+        tgt_rngs = lambda tr: common.Range(float(tr.find('td', 'target-range-low').get_text().strip()),float(tr.find('td', 'target-range-high').get_text().strip()))
         bg_before_meal_range,bg_after_meal_range,bg_tgt_range = \
             map(tgt_rngs, range_tbl.find_all('tr')[:3])
         sev_low = float(range_tbl.find('td', 'severe-low').get_text().strip())
         sev_high = float(range_tbl.find('td', 'severe-high').get_text().strip())
-        bg_severe_range = util.Range(sev_low, sev_high)
+        bg_severe_range = common.Range(sev_low, sev_high)
         return bg_tgt_range,bg_severe_range,bg_before_meal_range,bg_after_meal_range
 
     def __get_timeslots_sched(self):
@@ -178,12 +178,12 @@ class OtrParser(object):
         raw_sched = []
         for name,time in zip(names, times):
             start,end = map(lambda tok: tok.strip(), time.split('-'))
-            time_range = util.Range(t(start), t(end))
+            time_range = common.Range(t(start), t(end))
             raw_sched.append((name,time_range))
         return diaprofile.OtrTimeslotsSched(raw_sched)
 
 
-class OtrParserError(util.AbstractApiError):
+class OtrParserError(common.AbstractApiError):
 
     @classmethod
     def __default_status_code(cls):

@@ -1,8 +1,8 @@
-from .. import util
+from .. import common
 import datetime as dt
 
 
-class LogbookEntry(util.ICsvObj):
+class LogbookEntry(common.ICsvObj):
     def __init__(self, entry_date, entry_time):
         self.entry_date = entry_date
         self.entry_time = entry_time
