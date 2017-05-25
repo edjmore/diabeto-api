@@ -8,7 +8,21 @@
     </script>
   </head>
   <body>
+    <form action="/fitbit-login", method="GET">
+      <input id="fitbit_login_btn" type="submit" value="Login with Fitbit"/>
+    </form>
+    <form action="/otr-login", method="GET">
+      <input id="otr_login_btn" type="submit" value="Login with OneTouchReveal"/>
+    </form>
     <button onclick="javascript: dumpSession()">Dump session</button>
     <pre id="session_dump"><pre/>
+    <script>
+    {% if is_logged_into_fitbit() %}
+    document.getElementById("fitbit_login_btn").disabled = true;
+    {% endif %}
+    {% if is_logged_into_otr() %}
+    document.getElementById("otr_login_btn").disabled = true;
+    {% endif %}
+    </script>
   </body>
 </html>

@@ -7,6 +7,7 @@ from util import *
 import multiprocessing,os
 import flask,requests
 
+
 app = flask.Flask(__name__)
 app.secret_key = os.environ['DIABETO_SECRET_KEY']
 app.config['SERVER_NAME'] = 'localhost:5000'
@@ -45,7 +46,7 @@ def fitbit_redirect():
     return flask.redirect('index')
 
 @app.route('/fitbit-activity/<activity_metric>/<start_date>', methods=['GET'])
-@app.route('/fitbit-activity/<activity_metric>/<start_date>/<end_date>/<start_time>/<end_time>/<high_detail>', methods=['GET'])
+@app.route('/fitbit-activity/<activity_metric>/<start_date>/<end_date>/<start_time>/<end_time>/<high_detail>', methods=['GET', 'POST'])
 def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None, end_time=None, high_detail=None):
     """ Returns the intraday activity time series for the given metric. See
     FitApi.get_activity_time_series() for more information. If no valid user
@@ -53,9 +54,12 @@ def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None,
     """
     fit_user = load_fit_user(flask.session)
     if fit_user is None:
-        # Redirect back to this page after login
-        flask.session['redirect'] = flask.request.path
-        return flask.redirect(flask.url_for('fitbit_login'))
+        if flask.request.method == 'GET':
+            # Redirect back to this page after login
+            flask.session['redirect'] = flask.request.path
+            return flask.redirect(flask.url_for('fitbit_login'))
+        else:
+            abort(401) # unauthorized
     raw_json = None
     if end_date is None:
         raw_json = fit_api.get_activity_time_series(fit_user, activity_metric, start_date)
@@ -71,12 +75,15 @@ def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None,
             )
     parser = fitapi.FitParser(raw_json)
     logbook_entries = parser.get_logbook_entries()
-    fname = format('fitbit-%s_%s.csv' % (activity_metric,start_date))
     csv = ''
     if len(logbook_entries) > 0:
         csv += logbook_entries[0].__class__.get_csv_headers() + '\n'
         csv += '\n'.join(map(lambda e: e.to_csv(), logbook_entries))
-    return csv_download(csv, fname)
+    if flask.request.method == 'GET':
+        fname = format('fitbit-%s_%s.csv' % (activity_metric,start_date))
+        return csv_download(csv, fname)
+    else:
+        return csv
 
 @app.route('/otr-login', methods=['GET', 'POST'])
 def otr_login():
@@ -91,46 +98,69 @@ def otr_login():
             return flask.redirect(redirect_url)
         return flask.redirect('index')
 
-@app.route('/otr-logbook/<start_date>/<end_date>', methods=['GET'])
+@app.route('/otr-logbook/<start_date>/<end_date>', methods=['GET', 'POST'])
 def otr_logbook(start_date, end_date):
     """ Returns OneTouchReveal logbook entries for the given period. """
     otr_user = load_otr_user(flask.session)
     if otr_user is None:
-        # Redirect back to this page after login
-        flask.session['redirect'] = flask.request.path
-        return flask.redirect(flask.url_for('otr_login'))
+        if flask.request.method == 'GET':
+            # Redirect back to this page after login
+            flask.session['redirect'] = flask.request.path
+            return flask.redirect(flask.url_for('otr_login'))
+        else:
+            abort(401) # unauthorized
     otr_user.login()
     raw_html = otr_user.get_data_list_report(start_date, end_date)
     otr_user.logout()
-    fname = format('%s_otr-logbook_%s-%s.csv' % (
-        otr_user.username,start_date,end_date
-        ))
     parser = otrapi.OtrParser(raw_html)
     csv = logbook.OtrGlucoseEntry.get_csv_headers() + '\n' \
         + '\n'.join(map(lambda e: e.to_csv(), parser.get_logbook_entries()))
-    return csv_download(csv, fname)
+    if flask.request.method == 'GET':
+        fname = format('%s_otr-logbook_%s-%s.csv' % (
+            otr_user.username,start_date,end_date
+            ))
+        return csv_download(csv, fname)
+    else:
+        return csv
 
-@app.route('/otr-profile', methods=['GET'])
+@app.route('/otr-profile', methods=['GET', 'POST'])
 def otr_profile():
     """ Returns the user's OneTouchReveal diabetes profile. """
     otr_user = load_otr_user(flask.session)
     if otr_user is None:
-        # Redirect back to this page after login
-        flask.session['redirect'] = flask.request.path
-        return flask.redirect(flask.url_for('otr_login'))
+        if flask.request.method == 'GET':
+            # Redirect back to this page after login
+            flask.session['redirect'] = flask.request.path
+            return flask.redirect(flask.url_for('otr_login'))
+        else:
+            abort(401) # unauthorized
     otr_user.login()
     raw_html = otr_user.get_profile()
     otr_user.logout()
-    fname = format('%s_otr-profile.csv' % otr_user.username)
     parser = otrapi.OtrParser(raw_html)
     csv = parser.get_diabetes_profile().to_csv()
-    return csv_download(csv, fname)
+    if flask.request.method == 'GET':
+        fname = format('%s_otr-profile.csv' % otr_user.username)
+        return csv_download(csv, fname)
+    else:
+        return csv
 
 @app.errorhandler(common.AbstractApiError)
 def handle_api_error(e):
     response = flask.jsonify(e.to_dict())
     response.status_code = e.status_code
     return response
+
+@app.context_processor
+def util_processor():
+    def is_logged_into_fitbit():
+        return load_fit_user(flask.session) is not None
+    def is_logged_into_otr():
+        return load_otr_user(flask.session) is not None
+    return dict(
+        is_logged_into_fitbit=is_logged_into_fitbit,
+        is_logged_into_otr=is_logged_into_otr
+        )
 
 if __name__ == '__main__':
     app.run()
