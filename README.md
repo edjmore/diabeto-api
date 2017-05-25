@@ -1,15 +1,12 @@
+The goal of this project is to provide easy access to the raw data available
+thru the Fitbit API and on the OneTouchReveal website. My theory is that this
+combined data may be useful for diabetics interested in relationships between
+exercise and blood glucose levels.
 
-The server will provide access to the OneTouchReveal API (actually a web scraper), and
-the Fitbit API.
-
-OneTouchReveal:
- - client device will store username and password
- - each request to this server will include username and password
- - user will be logged in, request will be completed, user will be logged out
-
-Fitbit:
- - upon first request, client device will be redirected to Fitbit login page
- - server will store username, hashed Fitbit auth token, and Fitbit refresh token
- - client will make subsequent requests using username and Fitbit auth token
- - server will check authorization using the username and auth token, then complete the request
- - server will manage user login state and user refresh token if necessary
+Files & packages:
+  - api:
+      interfaces for accessing the Fitbit API and scraping onetouchreveal.com
+  - model:
+      datatypes for representing a diabetes profile and log entries
+  - server.py:
+      the Flask server capable of responding to API requests and front-end site
