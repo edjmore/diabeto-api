@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
     function dumpSession() {
       document.getElementById("session_dump").innerHTML = "{{ session_dump_str }}"
@@ -8,20 +9,54 @@
     </script>
   </head>
   <body>
-    <form action="/fitbit-login", method="GET">
-      <input id="fitbit_login_btn" type="submit" value="Login with Fitbit"/>
-    </form>
-    <form action="/otr-login", method="GET">
-      <input id="otr_login_btn" type="submit" value="Login with OneTouchReveal"/>
-    </form>
-    <button onclick="javascript: dumpSession()">Dump session</button>
-    <pre id="session_dump"><pre/>
+    <div id="login_div">
+      <form action="/fitbit-login", method="GET">
+        <input id="fitbit_login_btn" type="submit" value="Login with Fitbit"/>
+      </form>
+      <form action="/otr-login", method="GET">
+        <input id="otr_login_btn" type="submit" value="Login with OneTouchReveal"/>
+      </form>
+    </div>
+    <div id="raw_data_div">
+      Data source:
+      <select id="choose_raw_data_src" onchange="switchRawDataForm()">
+        <option value="fitbit" disabled>Fitbit
+        <option value="otr" disabled>OneTouchReveal
+      </select>
+      <form id="raw_fitbit_form" style="display: none;">
+        Fitbit:<br>
+        todo: create Fitbit form
+      </form>
+      <form id="raw_otr_form" style="display: none;">
+        OneTouchReveal:<br>
+        Start date:<br>
+        <input type="date" name="start_date"/>
+        <br>
+        End date:<br>
+        <input type="date" name="end_date"/>
+        <br><br>
+        <input type="button" onclick="loadOtrDataFromApi()" value="Submit"/>
+      </form>
+      <pre id="raw_data_dump"/>
+    </div>
+    <div id="debug_div">
+      <button onclick="dumpSession()">Dump session</button>
+      <pre id="session_dump"><pre/>
+    </div>
     <script>
+    var op = document.getElementById("choose_raw_data_src")
+                      .getElementsByTagName("option")
     {% if is_logged_into_fitbit() %}
     document.getElementById("fitbit_login_btn").disabled = true;
+    for (var i = 0; i < op.length; i++) {
+      if (op[i].value === "fitbit") op[i].disabled = false;
+    }
     {% endif %}
     {% if is_logged_into_otr() %}
     document.getElementById("otr_login_btn").disabled = true;
+    for (var i = 0; i < op.length; i++) {
+      if (op[i].value === "otr") op[i].disabled = false;
+    }
     {% endif %}
     </script>
   </body>

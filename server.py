@@ -153,6 +153,7 @@ def handle_api_error(e):
 
 @app.context_processor
 def util_processor():
+    """ Methods defined here can be called from HTML templates. """
     def is_logged_into_fitbit():
         return load_fit_user(flask.session) is not None
     def is_logged_into_otr():
