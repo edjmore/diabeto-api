@@ -67,6 +67,6 @@ class AbstractApiError(Exception):
         return 400
 
     def to_dict(self):
-        rv = dict(self.payload or ())
+        rv = dict(payload=self.payload)
         rv['message'] = self.message
         return rv

@@ -21,6 +21,8 @@ class FitApi(object):
         @high_detail        if True, will get an activity entry for each minute in the time
                             range, otw every 15 minutes (defaults to False)
         '''
+        if fit_user.is_auth_expired():
+            self.refresh_login(fit_user)
         detail_level = '1min' if high_detail else '15min'
         url = format('https://api.fitbit.com/1/user/-/activities/%s/date/%s/%s/%s'
             % (activity_metric,start_date,end_date,detail_level)
