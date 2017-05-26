@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
+sesh_man.get_fit_user()#!/usr/bin/env python3
 
 from src import common
 from src.api import *
 from src.model import *
+from src.app import *
 from util import *
 import multiprocessing,os
 import flask,requests
@@ -11,6 +12,8 @@ import flask,requests
 app = flask.Flask(__name__)
 app.secret_key = os.environ['DIABETO_SECRET_KEY']
 app.config['SERVER_NAME'] = 'localhost:5000'
+
+sesh_man = session_manager.SessionManager()
 
 fit_api = fitapi.FitApi(
     os.environ['FITBIT_CLIENT_ID'],
@@ -38,7 +41,7 @@ def fitbit_redirect():
     """
     auth_code = flask.request.args['code']
     fit_user = fit_api.login(auth_code)
-    sessionize_fit_user(fit_user)
+    sesh_man.add_fit_user(fit_user)
     redirect_url = flask.session.pop('redirect', None)
     if redirect_url:
         # Redirect back to original destination page
@@ -52,7 +55,7 @@ def fitbit_activity(activity_metric, start_date, end_date=None, start_time=None,
     FitApi.get_activity_time_series() for more information. If no valid user
     credentials are provided redirects to the login page.
     """
-    fit_user = load_fit_user(flask.session)
+    fit_user = sesh_man.get_fit_user()
     if fit_user is None:
         if flask.request.method == 'GET':
             # Redirect back to this page after login
@@ -90,8 +93,11 @@ def otr_login():
     if flask.request.method == 'GET':
         return flask.render_template('otr-login.html')
     else:
-        otr_user = load_otr_user(flask.request.form)
-        sessionize_otr_user(otr_user)
+        otr_user = otrapi.OtrApi(
+            flask.request.form['username'],
+            flask.request.form['password']
+            )
+        sesh_man.add_otr_user(otr_user)
         redirect_url = flask.session.pop('redirect', None)
         if redirect_url:
             # Redirect back to original destination page
@@ -101,7 +107,7 @@ def otr_login():
 @app.route('/otr-logbook/<start_date>/<end_date>', methods=['GET', 'POST'])
 def otr_logbook(start_date, end_date):
     """ Returns OneTouchReveal logbook entries for the given period. """
-    otr_user = load_otr_user(flask.session)
+    otr_user = sesh_man.get_otr_user()
     if otr_user is None:
         if flask.request.method == 'GET':
             # Redirect back to this page after login
@@ -126,7 +132,7 @@ def otr_logbook(start_date, end_date):
 @app.route('/otr-profile', methods=['GET', 'POST'])
 def otr_profile():
     """ Returns the user's OneTouchReveal diabetes profile. """
-    otr_user = load_otr_user(flask.session)
+    otr_user = sesh_man.get_otr_user()
     if otr_user is None:
         if flask.request.method == 'GET':
             # Redirect back to this page after login
@@ -155,9 +161,9 @@ def handle_api_error(e):
 def util_processor():
     """ Methods defined here can be called from HTML templates. """
     def is_logged_into_fitbit():
-        return load_fit_user(flask.session) is not None
+        return sesh_man.get_fit_user() is not None
     def is_logged_into_otr():
-        return load_otr_user(flask.session) is not None
+        return sesh_man.get_otr_user() is not None
     return dict(
         is_logged_into_fitbit=is_logged_into_fitbit,
         is_logged_into_otr=is_logged_into_otr

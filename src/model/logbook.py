@@ -28,7 +28,7 @@ class OtrLogbookEntry(LogbookEntry):
         return super(OtrLogbookEntry, cls).get_csv_headers() + ',otr_comments'
 
     def __str__(self):
-        return super(OtrLogbookEntry, self).__str__() + ',' + self.otr_comments
+        return super(OtrLogbookEntry, self).__str__() + (',"%s"' % self.otr_comments)
 
 
 class OtrGlucoseEntry(OtrLogbookEntry):
